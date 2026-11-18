@@ -8,15 +8,30 @@ const anton = Anton({ variable: "--font-anton", weight: "400", subsets: ["latin"
 const sora = Sora({ variable: "--font-sora", subsets: ["latin"], weight: ["500", "600", "700"], display: "swap" });
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"], display: "swap" });
 
+const SITE_URL = "https://santhosh-kumar-k-portfolio.onrender.com";
+const SHARE_IMAGE = { url: "/og-image.jpg", width: 1200, height: 630, alt: "Santhosh Kumar K — AI Enthusiast, Software Developer, Independent Builder" };
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Santhosh Kumar K — AI Enthusiast & Software Developer",
   description:
     "Portfolio of Santhosh Kumar K, an Information Technology student and independent developer building AI-powered applications: multimodal RAG, multi-agent analytics, explainable resume screening and online anomaly detection.",
-  authors: [{ name: "Santhosh Kumar K" }],
+  authors: [{ name: "Santhosh Kumar K", url: "https://github.com/Santhosh-Devlops" }],
+  alternates: { canonical: "/" },
   openGraph: {
     title: "Santhosh Kumar K — Beyond Code",
     description: "AI enthusiast, software developer and independent builder.",
+    url: "/",
+    siteName: "Santhosh Kumar K",
     type: "website",
+    locale: "en_IN",
+    images: [SHARE_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Santhosh Kumar K — Beyond Code",
+    description: "AI enthusiast, software developer and independent builder.",
+    images: [SHARE_IMAGE],
   },
 };
 

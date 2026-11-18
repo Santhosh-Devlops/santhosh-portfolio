@@ -1,5 +1,7 @@
 # Santhosh Kumar K — "Beyond Code" portfolio
 
+**Live:** https://santhosh-kumar-k-portfolio.onrender.com
+
 Cinematic 3D portfolio. Next.js 16 · React 19 · TypeScript · Tailwind 4 · Three.js / React Three Fiber / Drei · GSAP + ScrollTrigger · Lenis · Motion · Playwright.
 
 ## Run
@@ -22,6 +24,8 @@ npx playwright test            # 32 tests, desktop + mobile (uses installed Micr
 1. Push this repo to GitHub.
 2. Render dashboard → **New → Blueprint** → choose the repo → **Apply**.
 3. The site goes live at `https://<service-name>.onrender.com`; every push to `main` redeploys it.
+
+Test the deployed site with the same suite: `BASE_URL=https://santhosh-kumar-k-portfolio.onrender.com npx playwright test`
 
 URL flags for review: `?intro=1` force the title sequence · `?intro=0` skip it · `?nowebgl` SVG fallback · `?forcewebgl` force 3D even on a software renderer.
 
