@@ -4,12 +4,24 @@ Cinematic 3D portfolio. Next.js 16 · React 19 · TypeScript · Tailwind 4 · Th
 
 ## Run
 
+**Quickest:** double-click `Start Portfolio.cmd`. It opens the site in Chrome (or your default browser) at http://localhost:3100, builds only when the code has changed, and runs the server in a minimized "Portfolio server" window. Close that window to stop the site.
+
 ```bash
 npm install
 npm run dev -- --port 3100     # http://localhost:3100
 npm run build && npm start     # production
 npx playwright test            # 32 tests, desktop + mobile (uses installed Microsoft Edge)
 ```
+
+`npm run build` writes a fully static site to `out/`; `npm start` serves it locally (scripts/serve-static.mjs, no extra packages).
+
+## Deploy (Render, free static site)
+
+`render.yaml` is a Render Blueprint: build `npm ci && npm run build`, publish `out/`, Node 22, long cache on `/_next/static/*`.
+
+1. Push this repo to GitHub.
+2. Render dashboard → **New → Blueprint** → choose the repo → **Apply**.
+3. The site goes live at `https://<service-name>.onrender.com`; every push to `main` redeploys it.
 
 URL flags for review: `?intro=1` force the title sequence · `?intro=0` skip it · `?nowebgl` SVG fallback · `?forcewebgl` force 3D even on a software renderer.
 

@@ -34,12 +34,17 @@ export const setLenis = (l: Lenis | null) => {
 };
 export const getLenis = () => lenisRef;
 
-export function scrollToId(id: string) {
+/** Scrolls to an element by id; `onArrive` runs once the scroll has finished. */
+export function scrollToId(id: string, onArrive?: () => void) {
   const el = document.getElementById(id);
   if (!el) return;
   const lenis = getLenis();
-  if (lenis) lenis.scrollTo(el, { offset: id === "top" ? 0 : -20, duration: 1.6 });
-  else el.scrollIntoView({ behavior: sceneState.reducedMotion ? "auto" : "smooth", block: "start" });
+  if (lenis) {
+    lenis.scrollTo(el, { offset: id === "top" ? 0 : -20, duration: 1.6, onComplete: onArrive && (() => onArrive()) });
+  } else {
+    el.scrollIntoView({ behavior: sceneState.reducedMotion ? "auto" : "smooth", block: "start" });
+    if (onArrive) window.setTimeout(onArrive, sceneState.reducedMotion ? 0 : 700);
+  }
 }
 
 export function lockScroll(lock: boolean) {

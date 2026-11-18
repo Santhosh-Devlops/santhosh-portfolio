@@ -1,16 +1,20 @@
 "use client";
 
 /*
- * Opens a pre-filled Gmail draft addressed to Santhosh, sent from the visitor's
- * own Gmail account. Google does not allow a website to send mail from a
- * visitor's account by itself, so the visitor always presses Send in Gmail.
+ * Opens a pre-filled Gmail draft addressed to Santhosh, in the Gmail account
+ * of the address the visitor typed in the form. The email is sent from that
+ * account. Google does not allow a website to press Send for someone, so the
+ * visitor always presses Send in Gmail.
  *
- *   Android  → Gmail app (Chrome intent); falls back to Gmail on the web if the app is missing.
- *   iOS      → Gmail app (googlegmail:// scheme); falls back to Gmail on the web after a moment.
- *   Desktop  → Gmail compose window in a new tab.
+ *   Desktop  → Google's account chooser for that address (sign-in pre-filled if
+ *              needed), then the Gmail compose window of that account, new tab.
+ *   Android  → Gmail app compose, asked to use that account; falls back to the
+ *              desktop route in the browser if the app is missing.
+ *   iOS      → Gmail app compose (googlegmail://); falls back to the browser route.
+ *              The iOS app opens on its active account; the From line can be switched.
  */
 
-export type Draft = { to: string; subject?: string; body?: string };
+export type Draft = { to: string; from: string; subject?: string; body?: string };
 export type Platform = "android" | "ios" | "desktop";
 type Via = "app" | "web";
 
@@ -23,11 +27,19 @@ declare global {
 
 const enc = encodeURIComponent;
 
-export function gmailWebUrl({ to, subject = "", body = "" }: Draft) {
-  const q = ["view=cm", "fs=1", `to=${enc(to)}`];
+export const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+
+/** Gmail compose window for one specific account (authuser = that address). */
+export function gmailComposeUrl({ to, from, subject = "", body = "" }: Draft) {
+  const q = [`authuser=${enc(from)}`, "view=cm", "fs=1", `to=${enc(to)}`];
   if (subject) q.push(`su=${enc(subject)}`);
   if (body) q.push(`body=${enc(body)}`);
   return `https://mail.google.com/mail/?${q.join("&")}`;
+}
+
+/** Selects (or signs in to) the visitor's Google account first, then continues to that account's compose window. */
+export function gmailWebUrl(d: Draft) {
+  return `https://accounts.google.com/AccountChooser?Email=${enc(d.from)}&continue=${enc(gmailComposeUrl(d))}`;
 }
 
 function mailQuery({ subject = "", body = "" }: Draft) {
@@ -39,6 +51,7 @@ export function gmailAndroidIntent(d: Draft) {
   return (
     `intent:${d.to}${mailQuery(d)}` +
     `#Intent;scheme=mailto;action=android.intent.action.SENDTO;package=com.google.android.gm;` +
+    `S.fromAccountString=${enc(d.from)};` +
     `S.browser_fallback_url=${enc(gmailWebUrl(d))};end`
   );
 }
@@ -46,10 +59,6 @@ export function gmailAndroidIntent(d: Draft) {
 export function gmailIosUrl({ to, subject = "", body = "" }: Draft) {
   const q = [`to=${enc(to)}`, subject && `subject=${enc(subject)}`, body && `body=${enc(body)}`].filter(Boolean).join("&");
   return `googlegmail:///co?${q}`;
-}
-
-export function mailtoUrl(d: Draft) {
-  return `mailto:${d.to}${mailQuery(d)}`;
 }
 
 export function detectPlatform(): Platform {

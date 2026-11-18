@@ -10,7 +10,7 @@ export const profile = {
   location: "Madurai, Tamil Nadu, India",
   resumePdf: "/resume/Santhosh_Kumar_K_Resume.pdf",
   resumePreview: "/resume/resume-preview.png",
-  photo: "/images/santhosh-kumar-k.jpg",
+  photo: "/images/santhosh-kumar-k.webp",
   languages: ["English", "Tamil"],
 };
 

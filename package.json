@@ -5,8 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "start": "node scripts/serve-static.mjs",
+    "lint": "eslint",
+    "test": "playwright test"
+  },
+  "engines": {
+    "node": ">=20.9.0"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

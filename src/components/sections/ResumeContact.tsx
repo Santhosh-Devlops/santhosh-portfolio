@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { certifications, achievements, education, profile, socials } from "@/content/data";
 import { scrollToId } from "@/lib/scene";
-import { gmailWebUrl, mailtoUrl, openGmail, type Platform } from "@/lib/gmail";
+import { isEmail, openGmail, type Platform } from "@/lib/gmail";
 import { useTilt } from "@/lib/hooks";
 import { Glyph } from "../ui/Glyph";
 import { Button, SectionTitle } from "../ui/Primitives";
@@ -61,13 +61,12 @@ export function Resume() {
   );
 }
 
-type Errors = Partial<Record<"name" | "subject" | "message", string>>;
+type Errors = Partial<Record<"name" | "email" | "subject" | "message", string>>;
 
-const OPENED: Record<Platform, string> = {
-  android: "Opening the Gmail app with your message ready. Press Send there.",
-  ios: "Opening the Gmail app with your message ready. Press Send there.",
-  desktop: "Gmail opened in a new tab with your message ready. Press Send there.",
-};
+const opened = (p: Platform, from: string) =>
+  p === "desktop"
+    ? `Gmail opened in a new tab for ${from}, with your message to Santhosh ready. Press Send there.`
+    : `Opening the Gmail app with your message to Santhosh ready. Check that From shows ${from}, then press Send.`;
 
 function copyText(text: string) {
   if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text);
@@ -101,10 +100,12 @@ export function Contact() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const name = String(fd.get("name") || "").trim();
+    const email = String(fd.get("email") || "").trim();
     const subject = String(fd.get("subject") || "").trim();
     const message = String(fd.get("message") || "").trim();
     const next: Errors = {};
     if (name.length < 2) next.name = "Please enter your name.";
+    if (!isEmail(email)) next.email = "Please enter the Gmail address you want to send from.";
     if (subject.length > 120) next.subject = "Please keep the subject under 120 characters.";
     if (message.length < 20) next.message = "Please write at least 20 characters.";
     setErrors(next);
@@ -116,14 +117,22 @@ export function Contact() {
     }
     const platform = openGmail({
       to: profile.email,
+      from: email,
       subject: subject || `Portfolio enquiry from ${name}`,
       body: `${message}\n\n— ${name}`,
     });
-    setStatus(OPENED[platform]);
+    setStatus(opened(platform, email));
   };
 
-  const composeBlank = () => {
-    openGmail({ to: profile.email, subject: "Hello Santhosh" });
+  /** Single path to email Santhosh: bring the form into view and start at the visitor's address. */
+  const startMessage = () => {
+    // Focus after arriving: until the form scrolls in, its reveal animation keeps it hidden (not focusable).
+    scrollToId("contact-form", () => {
+      const field = document.getElementById("f-email") as HTMLInputElement | null;
+      if (!field) return;
+      field.closest<HTMLElement>("[data-reveal]")?.style.setProperty("visibility", "visible");
+      requestAnimationFrame(() => field.focus({ preventScroll: true }));
+    });
   };
 
   const field = (name: keyof Errors, label: string, props: React.InputHTMLAttributes<HTMLInputElement> & React.TextareaHTMLAttributes<HTMLTextAreaElement>, area = false) => (
@@ -151,19 +160,13 @@ export function Contact() {
 
         <div className="mt-16 grid gap-12 lg:grid-cols-12">
           <div className="lg:col-span-6" data-reveal>
-            <p className="label">Email</p>
-            <a
-              href={gmailWebUrl({ to: profile.email })}
-              onClick={(e) => {
-                e.preventDefault();
-                composeBlank();
-              }}
-              className="display mt-4 block text-[clamp(1.25rem,5.6vw,2.9rem)] leading-none text-white transition-colors [overflow-wrap:anywhere] hover:text-ice lg:text-[clamp(1.25rem,2.6vw,2.9rem)]" data-testid="email-link">
+            <p className="label">Santhosh&apos;s email</p>
+            <p className="display mt-4 block select-all text-[clamp(1.25rem,5.6vw,2.9rem)] leading-none text-white [overflow-wrap:anywhere] lg:text-[clamp(1.25rem,2.6vw,2.9rem)]" data-testid="email-address">
               {profile.email}
-            </a>
+            </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button variant="primary" icon="gmail" onClick={composeBlank} testId="compose-gmail">
-                Email via Gmail
+              <Button variant="primary" icon="gmail" onClick={startMessage} testId="start-message">
+                Write to Santhosh
               </Button>
               <Button variant="glass" icon={copied ? "check" : "copy"} onClick={onCopy} testId="copy-email">
                 {copied ? "Copied" : "Copy email"}
@@ -195,33 +198,38 @@ export function Contact() {
           </div>
 
           <div className="lg:col-span-6" data-reveal>
-            <form className="glass flex flex-col gap-5 p-6 sm:p-9" onSubmit={onSubmit} noValidate aria-describedby="form-note" data-testid="contact-form">
+            <form id="contact-form" className="glass flex flex-col gap-5 p-6 sm:p-9" onSubmit={onSubmit} noValidate aria-describedby="form-note" data-testid="contact-form">
               <div className="corner-ticks" />
-              <div className="flex items-center justify-between">
-                <p className="head text-[1.15rem]">Send a message</p>
-                <span className="label flex items-center gap-2 text-ice">
+              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                <p className="head whitespace-nowrap text-[1.15rem]">Send a message</p>
+                <span className="label flex items-center gap-2 whitespace-nowrap text-ice">
                   <Glyph name="gmail" size={16} strokeWidth={3} /> Sends through Gmail
                 </span>
               </div>
               {field("name", "Your name", { autoComplete: "name", placeholder: "Your name" })}
+              {field("email", "Your Gmail address", { type: "email", inputMode: "email", autoComplete: "email", placeholder: "you@gmail.com" })}
               {field("subject", "Subject (optional)", { placeholder: "Internship, project, collaboration…", maxLength: 140 })}
               {field("message", "Message", { placeholder: "What would you like to build or discuss?" }, true)}
-              <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
-                <p id="form-note" className="max-w-[32ch] text-[0.82rem] text-steel">
-                  Gmail opens with this message addressed to Santhosh. It sends from your own Gmail account, so he can reply to you directly. Nothing is stored on this site.
-                </p>
+              <ol id="form-note" className="flex flex-col gap-2 rounded-xl border border-white/[0.06] bg-black/30 p-4 text-[0.82rem] text-soft/75">
+                {[
+                  "Gmail opens for the address you entered (sign in if asked).",
+                  "The email is already written and addressed to santhoshkumark7680@gmail.com.",
+                  "Press Send in Gmail. It goes from your address, so Santhosh can reply to you.",
+                ].map((s, i) => (
+                  <li key={s} className="flex gap-3">
+                    <span className="label tabular-nums text-ice">0{i + 1}</span>
+                    <span>{s}</span>
+                  </li>
+                ))}
+              </ol>
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <p className="text-[0.78rem] text-steel">Nothing is stored on this site.</p>
                 <Button variant="primary" type="submit" icon="gmail" testId="form-submit">
-                  Send via Gmail
+                  Open Gmail and send
                 </Button>
               </div>
               <p className="text-[0.9rem] text-ice" role="status" data-testid="form-status">
                 {status}
-              </p>
-              <p className="text-[0.8rem] text-steel">
-                Not using Gmail?{" "}
-                <a href={mailtoUrl({ to: profile.email })} className="text-soft underline decoration-blue/60 underline-offset-4 hover:text-white" data-testid="mailto-fallback">
-                  Use your default mail app
-                </a>
               </p>
             </form>
           </div>

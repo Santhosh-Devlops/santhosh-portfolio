@@ -16,13 +16,15 @@ export default function About() {
         <div className="lg:col-span-5">
           <div ref={frame} className="tile cursor-default" data-reveal>
             <div className="glass overflow-hidden p-3">
-              <div className="relative aspect-[4/5] overflow-hidden rounded-[12px]">
+              <div className="group relative aspect-[4/5] overflow-hidden rounded-[12px]">
+                {/* Monochrome to match the site's palette; the original colour photo fades in on hover. */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={profile.photo}
-                  alt="Portrait of Santhosh Kumar K in a black suit"
-                  className="h-full w-full object-cover object-[50%_18%]"
-                  style={{ filter: "grayscale(1) contrast(1.12) brightness(.9)" }}
+                  alt="Portrait of Santhosh Kumar K in a black suit and black shirt"
+                  className="h-full w-full object-cover object-[50%_20%] brightness-90 contrast-[1.12] grayscale transition-[filter] duration-700 group-hover:brightness-100 group-hover:contrast-100 group-hover:grayscale-0"
+                  width={1254}
+                  height={1254}
                   loading="lazy"
                   data-parallax="6"
                 />
