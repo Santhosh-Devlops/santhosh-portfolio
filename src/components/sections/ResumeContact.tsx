@@ -12,8 +12,8 @@ export function Resume() {
   const frame = useTilt<HTMLAnchorElement>(6);
   const rows = [
     { k: "Education", v: `${education[0].title} · ${education[0].place.split(",")[0]} · CGPA 8.27` },
-    { k: "Projects", v: "Cloud Image Rainfall Prediction · Smart Railway Navigator · Ripples Solutions Website" },
-    { k: "Skills", v: "C · C++ · Java · Python · MySQL · MongoDB · HTML · CSS · JavaScript · React · Node.js · GraphQL · DSA · OOP · Cryptography · Operating Systems" },
+    { k: "Projects", v: "MultiDoc RAG · ORACLE · RecruitAI · DyMETER · Cloud Image Rainfall Prediction · Smart Railway Navigator · Ripples Solutions Website" },
+    { k: "Skills", v: "Machine Learning · Deep Learning · NLP · LLMs · RAG · Multi-Agent Systems · Python · Java · C++ · FastAPI · React · MySQL · MongoDB · AWS · DSA · OOP" },
     { k: "Certifications", v: `${certifications.length} — AWS, OpenAI, Anthropic + PayPal, LinkedIn, IIT Kharagpur, Coursera, IEEE` },
     { k: "Achievements", v: `${achievements.length} — hackathon podium, IEEE presentation, national hackathon build` },
     { k: "Contact", v: profile.email },
