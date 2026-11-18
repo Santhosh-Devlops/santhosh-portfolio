@@ -258,6 +258,12 @@ const glyphs = {
       <path d="M7 13l17 13 17-13" stroke={a} />
     </>
   ),
+  gmail: ({ m, a }) => (
+    <>
+      <path d="M6 37V14a3.5 3.5 0 0 1 5.6-2.8L24 20.5l12.4-9.3A3.5 3.5 0 0 1 42 14v23a3 3 0 0 1-3 3h-5V23.5l-10 7.5-10-7.5V40H9a3 3 0 0 1-3-3z" stroke={m} />
+      <path d="M14 23.5L24 31l10-7.5" stroke={a} />
+    </>
+  ),
   copy: ({ m, a }) => (
     <>
       <rect x="15" y="15" width="26" height="28" rx="5" stroke={m} />

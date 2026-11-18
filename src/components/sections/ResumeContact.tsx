@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { certifications, achievements, education, profile, socials } from "@/content/data";
 import { scrollToId } from "@/lib/scene";
+import { gmailWebUrl, mailtoUrl, openGmail, type Platform } from "@/lib/gmail";
 import { useTilt } from "@/lib/hooks";
 import { Glyph } from "../ui/Glyph";
 import { Button, SectionTitle } from "../ui/Primitives";
@@ -60,7 +61,13 @@ export function Resume() {
   );
 }
 
-type Errors = Partial<Record<"name" | "email" | "message", string>>;
+type Errors = Partial<Record<"name" | "subject" | "message", string>>;
+
+const OPENED: Record<Platform, string> = {
+  android: "Opening the Gmail app with your message ready. Press Send there.",
+  ios: "Opening the Gmail app with your message ready. Press Send there.",
+  desktop: "Gmail opened in a new tab with your message ready. Press Send there.",
+};
 
 function copyText(text: string) {
   if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text);
@@ -94,11 +101,11 @@ export function Contact() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const name = String(fd.get("name") || "").trim();
-    const email = String(fd.get("email") || "").trim();
+    const subject = String(fd.get("subject") || "").trim();
     const message = String(fd.get("message") || "").trim();
     const next: Errors = {};
     if (name.length < 2) next.name = "Please enter your name.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) next.email = "Please enter a valid email address.";
+    if (subject.length > 120) next.subject = "Please keep the subject under 120 characters.";
     if (message.length < 20) next.message = "Please write at least 20 characters.";
     setErrors(next);
     if (Object.keys(next).length) {
@@ -107,10 +114,16 @@ export function Contact() {
       first?.focus();
       return;
     }
-    const subject = encodeURIComponent(`Portfolio enquiry from ${name}`);
-    const body = encodeURIComponent(`${message}\n\n— ${name}\n${email}`);
-    setStatus("Your email app is opening with the message ready to send.");
-    window.location.href = `mailto:${profile.email}?subject=${subject}&body=${body}`;
+    const platform = openGmail({
+      to: profile.email,
+      subject: subject || `Portfolio enquiry from ${name}`,
+      body: `${message}\n\n— ${name}`,
+    });
+    setStatus(OPENED[platform]);
+  };
+
+  const composeBlank = () => {
+    openGmail({ to: profile.email, subject: "Hello Santhosh" });
   };
 
   const field = (name: keyof Errors, label: string, props: React.InputHTMLAttributes<HTMLInputElement> & React.TextareaHTMLAttributes<HTMLTextAreaElement>, area = false) => (
@@ -139,12 +152,18 @@ export function Contact() {
         <div className="mt-16 grid gap-12 lg:grid-cols-12">
           <div className="lg:col-span-6" data-reveal>
             <p className="label">Email</p>
-            <a href={`mailto:${profile.email}`} className="display mt-4 block text-[clamp(1.25rem,5.6vw,2.9rem)] leading-none text-white transition-colors [overflow-wrap:anywhere] hover:text-ice lg:text-[clamp(1.25rem,2.6vw,2.9rem)]" data-testid="email-link">
+            <a
+              href={gmailWebUrl({ to: profile.email })}
+              onClick={(e) => {
+                e.preventDefault();
+                composeBlank();
+              }}
+              className="display mt-4 block text-[clamp(1.25rem,5.6vw,2.9rem)] leading-none text-white transition-colors [overflow-wrap:anywhere] hover:text-ice lg:text-[clamp(1.25rem,2.6vw,2.9rem)]" data-testid="email-link">
               {profile.email}
             </a>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button variant="primary" icon="mail" href={`mailto:${profile.email}`}>
-                Write an email
+              <Button variant="primary" icon="gmail" onClick={composeBlank} testId="compose-gmail">
+                Email via Gmail
               </Button>
               <Button variant="glass" icon={copied ? "check" : "copy"} onClick={onCopy} testId="copy-email">
                 {copied ? "Copied" : "Copy email"}
@@ -180,21 +199,29 @@ export function Contact() {
               <div className="corner-ticks" />
               <div className="flex items-center justify-between">
                 <p className="head text-[1.15rem]">Send a message</p>
-                <span className="label text-ice">Opens your mail app</span>
+                <span className="label flex items-center gap-2 text-ice">
+                  <Glyph name="gmail" size={16} strokeWidth={3} /> Sends through Gmail
+                </span>
               </div>
-              {field("name", "Name", { autoComplete: "name", placeholder: "Your name" })}
-              {field("email", "Email", { type: "email", autoComplete: "email", placeholder: "you@company.com" })}
+              {field("name", "Your name", { autoComplete: "name", placeholder: "Your name" })}
+              {field("subject", "Subject (optional)", { placeholder: "Internship, project, collaboration…", maxLength: 140 })}
               {field("message", "Message", { placeholder: "What would you like to build or discuss?" }, true)}
               <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
-                <p id="form-note" className="max-w-[30ch] text-[0.82rem] text-steel">
-                  No data is stored. The form drafts an email in your own mail app.
+                <p id="form-note" className="max-w-[32ch] text-[0.82rem] text-steel">
+                  Gmail opens with this message addressed to Santhosh. It sends from your own Gmail account, so he can reply to you directly. Nothing is stored on this site.
                 </p>
-                <Button variant="primary" type="submit" icon="arrow-right" testId="form-submit">
-                  Send message
+                <Button variant="primary" type="submit" icon="gmail" testId="form-submit">
+                  Send via Gmail
                 </Button>
               </div>
               <p className="text-[0.9rem] text-ice" role="status" data-testid="form-status">
                 {status}
+              </p>
+              <p className="text-[0.8rem] text-steel">
+                Not using Gmail?{" "}
+                <a href={mailtoUrl({ to: profile.email })} className="text-soft underline decoration-blue/60 underline-offset-4 hover:text-white" data-testid="mailto-fallback">
+                  Use your default mail app
+                </a>
               </p>
             </form>
           </div>

@@ -165,17 +165,54 @@ test.describe("interactions", () => {
 
     await page.getByTestId("form-submit").click();
     await expect(page.locator("#e-name")).toBeVisible();
-    await expect(page.locator("#e-email")).toBeVisible();
     await expect(page.locator("#e-message")).toBeVisible();
     await expect(page.locator("#f-name")).toBeFocused();
 
     await page.fill("#f-name", "Recruiter");
-    await page.fill("#f-email", "not-an-email");
-    await page.fill("#f-message", "We would like to talk about an AI internship role.");
+    await page.fill("#f-message", "too short");
     await page.getByTestId("form-submit").click();
-    await expect(page.locator("#e-email")).toBeVisible();
+    await expect(page.locator("#e-message")).toBeVisible();
     await expect(page.locator("#e-name")).toBeHidden();
-    await expect(page.getByTestId("email-link")).toHaveAttribute("href", "mailto:santhoshkumark7680@gmail.com");
+    await expect(page.getByTestId("mailto-fallback")).toHaveAttribute("href", "mailto:santhoshkumark7680@gmail.com");
+  });
+
+  test("contact: form opens a pre-filled Gmail draft to Santhosh", async ({ page, isMobile }) => {
+    await page.addInitScript(() => {
+      const w = window as unknown as { __gmail: { url: string; via: string }[]; __skkOpenGmail: (url: string, via: string) => void };
+      w.__gmail = [];
+      w.__skkOpenGmail = (url, via) => w.__gmail.push({ url, via });
+    });
+    await openSite(page);
+    await reach(page, "form-submit");
+    await page.fill("#f-name", "Priya Recruiter");
+    await page.fill("#f-subject", "AI internship");
+    await page.fill("#f-message", "We would like to talk about an AI engineering internship.");
+    await page.getByTestId("form-submit").click();
+    await expect(page.getByTestId("form-status")).toContainText("Press Send");
+
+    const calls = await page.evaluate(() => (window as unknown as { __gmail: { url: string; via: string }[] }).__gmail);
+    expect(calls).toHaveLength(1);
+    const { url, via } = calls[0];
+    if (isMobile) {
+      // Pixel 7 emulation → Android Gmail app intent, with Gmail-on-the-web as fallback.
+      expect(via).toBe("app");
+      expect(url).toMatch(/^intent:santhoshkumark7680@gmail\.com\?subject=AI%20internship&body=/);
+      expect(url).toContain("package=com.google.android.gm");
+      expect(decodeURIComponent(url.split("S.browser_fallback_url=")[1])).toMatch(/^https:\/\/mail\.google\.com\/mail\/\?view=cm/);
+    } else {
+      expect(via).toBe("web");
+      const u = new URL(url);
+      expect(u.origin + u.pathname).toBe("https://mail.google.com/mail/");
+      expect(u.searchParams.get("view")).toBe("cm");
+      expect(u.searchParams.get("to")).toBe("santhoshkumark7680@gmail.com");
+      expect(u.searchParams.get("su")).toBe("AI internship");
+      expect(u.searchParams.get("body")).toBe("We would like to talk about an AI engineering internship.\n\n— Priya Recruiter");
+    }
+
+    await page.getByTestId("compose-gmail").click();
+    const calls2 = await page.evaluate(() => (window as unknown as { __gmail: { url: string }[] }).__gmail);
+    expect(calls2).toHaveLength(2);
+    expect(calls2[1].url).toContain("santhoshkumark7680");
   });
 
   test("social links point to the right profiles", async ({ page }) => {
